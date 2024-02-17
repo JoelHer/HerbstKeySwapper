@@ -1,0 +1,76 @@
+﻿<Page
+    x:Class="Postie.Views.Pages.DashboardPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Postie.Views.Pages"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="DashboardPage"
+    d:DataContext="{d:DesignInstance local:DashboardPage,
+                                     IsDesignTimeCreatable=False}"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+    ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    mc:Ignorable="d">
+
+    <Grid VerticalAlignment="Top" HorizontalAlignment="Stretch">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Grid Visibility="{Binding ViewModel.ConnectGridVisibility}">
+            <ui:Button
+                Grid.Column="0"
+                Command="{Binding ViewModel.CounterIncrementCommand, Mode=OneWay}"
+                Content="Click me!"
+                Icon="Fluent24" VerticalAlignment="Top" />
+            <TextBlock
+                Margin="85,6,0,0"
+                VerticalAlignment="Top"
+                Text="{Binding ViewModel.Counter, Mode=OneWay}" RenderTransformOrigin="0.499,1.772" HorizontalAlignment="Left" Width="32" />
+            <Label Content="Hostname" HorizontalAlignment="Left" Height="20" Margin="0,49,0,0" VerticalAlignment="Top" Width="63" RenderTransformOrigin="0.393,0.388"/>
+            <ui:TextBox Text="{Binding ViewModel.HostName, Mode=TwoWay}" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="34" Margin="78,41,0,0" PlaceholderText="Enter Hostname" VerticalAlignment="Top" />
+            <Label Content="User" HorizontalAlignment="Left" Height="20" Margin="0,88,0,0" VerticalAlignment="Top" Width="63" RenderTransformOrigin="0.393,0.388"/>
+            <ui:TextBox Text="{Binding ViewModel.Username, Mode=TwoWay}" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="34" Margin="78,80,0,0" PlaceholderText="Enter Username" VerticalAlignment="Top" />
+            <Label Content="Password" HorizontalAlignment="Left" Height="20" Margin="1,127,0,0" VerticalAlignment="Top" Width="63" RenderTransformOrigin="0.393,0.388"/>
+            <ui:TextBox Text="{Binding ViewModel.Password, Mode=TwoWay}" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="34" Margin="79,119,0,0" PlaceholderText="Enter Password" VerticalAlignment="Top" InputScope="Password" />
+            <ui:Button Content="Save" Margin="0,181,0,0" VerticalAlignment="Top" Width="95" IsEnabled="False"/>
+            <ui:Button Command="{Binding ViewModel.ConnectButtonClickCommand}" Content="Connect" Margin="102,181,0,0" VerticalAlignment="Top" Width="95" Grid.ColumnSpan="2"/>
+            <TextBlock Text="{Binding ViewModel.HostName, Mode=OneWay}" Margin="269,49,-365,200" Grid.Column="1" />
+        </Grid>
+        <Grid Grid.ColumnSpan="2" Margin="0,0,-599,0" Visibility="{Binding ViewModel.ServerPageVisibility}">
+            <ui:ProgressRing Visibility="{Binding ViewModel.LoadingVisibility}" IsIndeterminate="True"/>
+            <ui:TextBlock Visibility="{Binding ViewModel.OutputLogVisibility}" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="18" Width="222">
+                <Run Language="de-de" Text="Connection Log: "/>
+            </ui:TextBlock>
+            <ui:TextBlock Visibility="{Binding ViewModel.OutputLogVisibility}" Margin="0,33,0,0" TextWrapping="Wrap" VerticalAlignment="Top">
+                <Run Text="{Binding ViewModel.OutputLog}"/>
+            </ui:TextBlock>
+            <ui:Button Visibility="{Binding ViewModel.BackBtnVisibility}" Command="{Binding ViewModel.BackButtonCommand}" VerticalAlignment="Top" Height="30" Width="86" Content="Back" Margin="0,54,0,0" />
+        </Grid>
+
+
+        <TreeView ItemsSource="{Binding ViewModel.DataEntitiyList}">
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate ItemsSource="{Binding EntityItems}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Type}" />
+                        <TextBlock Text=" - " />
+                        <TextBlock Text="{Binding Name}" />
+                    </StackPanel>
+                    <HierarchicalDataTemplate.ItemTemplate>
+                        <DataTemplate>
+                            <TreeViewItem Header="{Binding}">
+                                <!-- You can customize the appearance of the inner items here -->
+                            </TreeViewItem>
+                        </DataTemplate>
+                    </HierarchicalDataTemplate.ItemTemplate>
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
+
+    </Grid>
+</Page>
