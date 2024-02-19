@@ -21,24 +21,23 @@
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <Grid Visibility="{Binding ViewModel.ConnectGridVisibility}">
-            <ui:Button
-                Grid.Column="0"
-                Command="{Binding ViewModel.CounterIncrementCommand, Mode=OneWay}"
-                Content="Click me!"
-                Icon="Fluent24" VerticalAlignment="Top" />
-            <TextBlock
-                Margin="85,6,0,0"
-                VerticalAlignment="Top"
-                Text="{Binding ViewModel.Counter, Mode=OneWay}" RenderTransformOrigin="0.499,1.772" HorizontalAlignment="Left" Width="32" />
+        <Grid Visibility="{Binding ViewModel.ConnectGridVisibility}" Margin="0,28,0,-28">
+            <Label Content="Mode" HorizontalAlignment="Left" Height="20" Margin="0,9,0,0" VerticalAlignment="Top" Width="63" RenderTransformOrigin="0.393,0.388"/>
+            <ComboBox VerticalAlignment="Top" Margin="79,2,0,0" Height="35">
+                <ComboBoxItem Content="Password"/>
+                <ComboBoxItem Content="Private Key" />
+            </ComboBox>
+                
             <Label Content="Hostname" HorizontalAlignment="Left" Height="20" Margin="0,49,0,0" VerticalAlignment="Top" Width="63" RenderTransformOrigin="0.393,0.388"/>
             <ui:TextBox Text="{Binding ViewModel.HostName, Mode=TwoWay}" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="34" Margin="78,41,0,0" PlaceholderText="Enter Hostname" VerticalAlignment="Top" />
             <Label Content="User" HorizontalAlignment="Left" Height="20" Margin="0,88,0,0" VerticalAlignment="Top" Width="63" RenderTransformOrigin="0.393,0.388"/>
             <ui:TextBox Text="{Binding ViewModel.Username, Mode=TwoWay}" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="34" Margin="78,80,0,0" PlaceholderText="Enter Username" VerticalAlignment="Top" />
             <Label Content="Password" HorizontalAlignment="Left" Height="20" Margin="1,127,0,0" VerticalAlignment="Top" Width="63" RenderTransformOrigin="0.393,0.388"/>
             <ui:TextBox Text="{Binding ViewModel.Password, Mode=TwoWay}" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="34" Margin="79,119,0,0" PlaceholderText="Enter Password" VerticalAlignment="Top" InputScope="Password" />
-            <ui:Button Command="{Binding ViewModel.KeySelectButtonCommand}" Content="Save" Margin="0,181,0,0" VerticalAlignment="Top" Width="95"/>
-            <ui:Button Command="{Binding ViewModel.ConnectButtonClickCommand}" Content="Connect" Margin="102,181,0,0" VerticalAlignment="Top" Width="95" Grid.ColumnSpan="2"/>
+            <Label Content="Priv-Key" HorizontalAlignment="Left" Height="25" Margin="1,167,0,0" VerticalAlignment="Top" Width="63" RenderTransformOrigin="0.393,0.388"/>
+            <ui:Button Command="{Binding ViewModel.KeySelectButtonCommand}" Content="Select File" Margin="79,161,0,0" VerticalAlignment="Top" Width="122"/>
+            <ui:Button Content="Save" Margin="0,228,0,0" VerticalAlignment="Top" Width="95"/>
+            <ui:Button Command="{Binding ViewModel.ConnectButtonClickCommand}" Content="Connect" Margin="102,228,0,0" VerticalAlignment="Top" Width="95"/>
             <TextBlock Text="{Binding ViewModel.HostName, Mode=OneWay}" Margin="269,49,-365,200" Grid.Column="1" />
         </Grid>
         <Grid Grid.ColumnSpan="2" Margin="0,0,-599,0" Visibility="{Binding ViewModel.ServerPageVisibility}">

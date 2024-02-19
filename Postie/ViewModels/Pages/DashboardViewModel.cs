@@ -74,8 +74,6 @@ namespace Postie.ViewModels.Pages
             openFileDialog.Filter = "Private Key Files (*.pem;*.ppk;)|*.pem;*.ppk;|All files (*.*)|*.*";
             openFileDialog.Title = "Select Private Key File";
 
-
-            // Show OpenFileDialog
             bool? result = openFileDialog.ShowDialog();
         }
 
