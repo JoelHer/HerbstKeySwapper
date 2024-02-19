@@ -6,6 +6,7 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Win32;
 using Renci.SshNet;
 using SshNet;
 
@@ -64,6 +65,18 @@ namespace Postie.ViewModels.Pages
             ServerPageVisibility = "Hidden";
             BackBtnVisibility = "Hidden";
             OutputLog = "";
+        }
+
+        [RelayCommand]
+        private void OnKeySelectButton()
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Private Key Files (*.pem;*.ppk;)|*.pem;*.ppk;|All files (*.*)|*.*";
+            openFileDialog.Title = "Select Private Key File";
+
+
+            // Show OpenFileDialog
+            bool? result = openFileDialog.ShowDialog();
         }
 
         [RelayCommand]

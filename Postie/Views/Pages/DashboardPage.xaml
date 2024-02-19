@@ -37,7 +37,7 @@
             <ui:TextBox Text="{Binding ViewModel.Username, Mode=TwoWay}" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="34" Margin="78,80,0,0" PlaceholderText="Enter Username" VerticalAlignment="Top" />
             <Label Content="Password" HorizontalAlignment="Left" Height="20" Margin="1,127,0,0" VerticalAlignment="Top" Width="63" RenderTransformOrigin="0.393,0.388"/>
             <ui:TextBox Text="{Binding ViewModel.Password, Mode=TwoWay}" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="34" Margin="79,119,0,0" PlaceholderText="Enter Password" VerticalAlignment="Top" InputScope="Password" />
-            <ui:Button Content="Save" Margin="0,181,0,0" VerticalAlignment="Top" Width="95" IsEnabled="False"/>
+            <ui:Button Command="{Binding ViewModel.KeySelectButtonCommand}" Content="Save" Margin="0,181,0,0" VerticalAlignment="Top" Width="95"/>
             <ui:Button Command="{Binding ViewModel.ConnectButtonClickCommand}" Content="Connect" Margin="102,181,0,0" VerticalAlignment="Top" Width="95" Grid.ColumnSpan="2"/>
             <TextBlock Text="{Binding ViewModel.HostName, Mode=OneWay}" Margin="269,49,-365,200" Grid.Column="1" />
         </Grid>
@@ -53,7 +53,7 @@
         </Grid>
 
 
-        <TreeView ItemsSource="{Binding ViewModel.DataEntitiyList}">
+        <TreeView Visibility="{Binding ViewModel.DataVisVisibility}" ItemsSource="{Binding ViewModel.DataEntitiyList}">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding EntityItems}">
                     <StackPanel Orientation="Horizontal">
