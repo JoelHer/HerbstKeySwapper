@@ -53,22 +53,12 @@
         </Grid>
 
 
-        <TreeView ItemsSource="{Binding ViewModel.DataEntitiyList}">
+        <TreeView Visibility="{Binding ViewModel.DataVisVisibility}" ItemsSource="{Binding ViewModel.DataEntitiyList}" Name="fileHierarchyTreeView">
             <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate ItemsSource="{Binding EntityItems}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{Binding Type}" />
-                        <TextBlock Text=" - " />
-                        <TextBlock Text="{Binding Name}" />
-                    </StackPanel>
-                    <HierarchicalDataTemplate.ItemTemplate>
-                        <DataTemplate>
-                            <TreeViewItem Header="{Binding}">
-                                <!-- You can customize the appearance of the inner items here -->
-                            </TreeViewItem>
-                        </DataTemplate>
-                    </HierarchicalDataTemplate.ItemTemplate>
-                </HierarchicalDataTemplate>
+                <DataTemplate>
+                    <ui:TreeViewItem Header="{Binding Name}" IsExpanded="True">
+                    </ui:TreeViewItem>
+                </DataTemplate>
             </TreeView.ItemTemplate>
         </TreeView>
 
