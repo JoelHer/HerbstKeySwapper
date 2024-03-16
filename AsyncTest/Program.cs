@@ -130,7 +130,7 @@ namespace AsyncTest
                     await Console.Out.WriteLineAsync($"Deleting Passphrase for {result.Result.GetHost().Hostname}...");
                     using (var command = _db.CreateCommand())
                     {
-                        command.CommandText = "UPDATE ServerKeys SET Passphrase = @Passphrase WHERE ServerID = @ServerID;";
+                        command.CommandText = "UPDATE ServerKeys SET Passphrase = @Passphrase, PrivateKey = @Passphrase, PublicKey = @Passphrase WHERE ServerID = @ServerID;";
                         command.Parameters.AddWithValue("@Passphrase", "");
                         command.Parameters.AddWithValue("@ServerID", result.Result.GetHost().ServerID);
 
@@ -204,7 +204,7 @@ namespace AsyncTest
             }
 
             string _GeneratedPassphrase = builder.ToString();
-            var keyInfo = new SshKeyGenerateInfo { Encryption = new SshKeyEncryptionAes256("sadasd") };
+            var keyInfo = new SshKeyGenerateInfo { Encryption = new SshKeyEncryptionAes256(_GeneratedPassphrase) };
             var _key = SshKey.Generate("servery.ppk", FileMode.Create, keyInfo);
             var privateKey = SshKey.Generate(keyInfo);
             var publicSshKeyWithComment = _key.ToPublic();
@@ -218,26 +218,34 @@ namespace AsyncTest
 
             ConnectionInfo ?_connectionInfo = null;
 
-            if (_endServer.Passphrase == "")
+            if (_endServer.PrivateKey != "")
             {
-                _connectionInfo = new PasswordConnectionInfo(_endServer.Hostname, _endServer.Username, _endServer.Password);
-                Console.WriteLine($"({_endServer.Hostname}): Using Password to connect.");
-            } else
-            {
-                if (_endServer.PrivateKey != "")
+                if (_endServer.Passphrase != "")
                 {
                     Console.WriteLine($"({_endServer.Hostname}): Using PK+Passphrase to connect.");
                     try
                     {
-                        _connectionInfo = new PrivateKeyConnectionInfo(_endServer.Hostname, _endServer.Username, new PrivateKeyFile(new MemoryStream(Encoding.UTF8.GetBytes(_endServer.PrivateKey))));
+                        _connectionInfo = new PrivateKeyConnectionInfo(_endServer.Hostname, _endServer.Username, new PrivateKeyFile(new MemoryStream(Encoding.UTF8.GetBytes(_endServer.PrivateKey)), _endServer.Passphrase));
                     } catch
                     {
                         return new ConnectionResult(_endServer, 0, "Data error: Error with Private Key", "", "");
                     }
                 } else
                 {
-                    return new ConnectionResult(_endServer, 0, "Data error: No Private key found in Database...", "", "");
+                    Console.WriteLine($"({_endServer.Hostname}): Using PK to connect.");
+                    try
+                    {
+                        _connectionInfo = new PrivateKeyConnectionInfo(_endServer.Hostname, _endServer.Username, new PrivateKeyFile(new MemoryStream(Encoding.UTF8.GetBytes(_endServer.PrivateKey))));
+                    }
+                    catch
+                    {
+                        return new ConnectionResult(_endServer, 0, "Data error: Error with Private Key", "", "");
+                    }
                 }
+            } else
+            {
+                _connectionInfo = new PasswordConnectionInfo(_endServer.Hostname, _endServer.Username, _endServer.Password);
+                Console.WriteLine($"({_endServer.Hostname}): Using Password to connect.");
             }
 
             using (var client = new SshClient(_connectionInfo))
@@ -306,7 +314,7 @@ namespace AsyncTest
                                                         }
                                                         if (_foundkey)
                                                         {
-                                                            return new ConnectionResult(_endServer, 0, "Keyswap Success", publicSshKeyWithComment, _key.ToOpenSshFormat(), _GeneratedPassphrase);
+                                                            return new ConnectionResult(_endServer, 0, "Keyswap Success", publicSshKeyWithComment, _key.ToOpenSshFormat(keyInfo.Encryption), _GeneratedPassphrase);
                                                         } else
                                                         {
                                                             return new ConnectionResult(_endServer, 0, "KeySwap2 error: not found after copy", "", "");
