@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SSH.NET" Version="2023.0.1" />
+    <PackageReference Include="SshNet.Keygen" Version="0.2.0-beta" />
     <PackageReference Include="WPF-UI" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0 " />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2 " />
@@ -24,6 +24,12 @@
   <ItemGroup>
     <None Remove="Assets\wpfui-icon-256.png" />
     <None Remove="Assets\wpfui-icon-1024.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="PostieKeyCreator">
+      <HintPath>..\PostieKeyCreator\bin\Debug\net8.0\PostieKeyCreator.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

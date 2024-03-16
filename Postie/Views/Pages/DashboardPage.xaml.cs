@@ -5,6 +5,8 @@
 
 using Postie.ViewModels.Pages;
 using Wpf.Ui.Controls;
+using Postie.Models;
+using Postie.Services;
 
 namespace Postie.Views.Pages
 {
@@ -16,6 +18,8 @@ namespace Postie.Views.Pages
         {
             ViewModel = viewModel;
             DataContext = this;
+
+            
 
             InitializeComponent();
         }

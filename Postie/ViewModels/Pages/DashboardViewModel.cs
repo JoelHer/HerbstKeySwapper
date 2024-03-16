@@ -3,11 +3,19 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.IO;
 using System.Net;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Windows.Input;
 using Microsoft.Extensions.Hosting;
+using Postie.Models;
+using Postie.Services;
+using PostieKeyCreator;
 using Renci.SshNet;
-using SshNet;
 
 namespace Postie.ViewModels.Pages
 {
@@ -15,12 +23,6 @@ namespace Postie.ViewModels.Pages
     {
         // Roses are red, violets are blue, unexpected '{' on line 32
         // Roses are red, violets are blue, unexpected '}' on line 42
-        // Roses are red, violets are blue, unexpected '{' on line 52
-        // Roses are red, violets are blue, unexpected '}' on line 62
-        // Roses are red, violets are blue, unexpected '{' on line 72
-        // Roses are red, violets are blue, unexpected '}' on line 82
-        // Roses are red, violets are blue, unexpected '{' on line 92
-        // Roses are red, violets are blue, unexpected '}' on line 102
 
         [ObservableProperty]
         private int _counter = 0;
@@ -76,6 +78,59 @@ namespace Postie.ViewModels.Pages
         }
 
         [RelayCommand]
+        private async void OnSaveButtonClick()
+        {
+            //KeySwapper keySwapper = new KeySwapper();
+            //keySwapper.SwapKey(HostName, Password, Username, Password);
+            sKeys();
+        }
+
+        private async void sKeys()
+        {
+            List<string> hostNames = new List<string> { "192.168.178.57", "192.168.178.577" };
+            string username = "herbst";
+            string password = "Herbst710";
+
+            SemaphoreSlim semaphore = new SemaphoreSlim(5);
+            Func<string, Task> swapKeyAsync = async (hostName) =>
+            {
+                await semaphore.WaitAsync();
+                try
+                {
+                    KeySwapper keySwapper = new KeySwapper();
+                    string success = await keySwapper.SwapKeyAsync(hostName, password, username, password);
+                } catch (Exception ex) 
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+                
+            };
+
+            List<Task> tasks = new List<Task>();
+
+            foreach (var hostName in hostNames)
+            {
+                var task = swapKeyAsync(hostName);
+
+                tasks.Add(task);
+
+                if (tasks.Count >= 5)
+                {
+                    var completedTask = await Task.WhenAny(tasks);
+                    tasks.Remove(completedTask);
+                }
+            }
+
+            await Task.WhenAll(tasks);
+
+            Console.WriteLine("All keys swapped.");
+        }
+
+        [RelayCommand]
         private void OnConnectButtonClick()
         {
             try
@@ -128,13 +183,45 @@ namespace Postie.ViewModels.Pages
                         commandResult = client.RunCommand("pwd \n");
                         OutputLog += "pwd result: ";
                         OutputLog += commandResult.Result;
-                        commandResult = client.RunCommand("ls -l \n");
+                        commandResult = client.RunCommand("ls ~/.ssh/ -l \n");
                         OutputLog += "ls result: ";
-                        OutputLog += commandResult.Result;
                         DataEntitiyList = ParseLsOutput(commandResult.Result);
-                        OutputLogVisibility = "Hidden";
-                        DataVisVisibility = "Visible";
-                        client.Disconnect();
+                        OutputLog += commandResult.Result;
+                        commandResult = client.RunCommand("cd ~/.ssh/ \n");
+                        OutputLog += commandResult.Result;
+                        if (DataEntitiyList.Count > 0)
+                        {
+                            bool bFoundAuthKeyDir = false;
+                            foreach (DataEntity entity in DataEntitiyList)
+                            {
+                                if (entity.Name == "authorized_keys")
+                                {
+                                    bFoundAuthKeyDir = true;
+                                    break;
+                                }
+                            }
+                            if (bFoundAuthKeyDir)
+                            {
+                                OutputLog += "Found authorized_keys.\n";
+                                OutputLog += commandResult.Result;
+                                commandResult = client.RunCommand("cat ~/.ssh/authorized_keys \n");
+                                OutputLog += "cat result: ";
+                                OutputLog += commandResult.Result;
+                            }
+                            else
+                            {
+                                OutputLog += "No authorized_keys found.\n";
+                                OutputLog += commandResult.Result;
+                            }
+                            client.Disconnect();
+                            BackBtnVisibility = "Visible";
+                        } else
+                        {
+                            OutputLog += "No files found.\n";
+                            OutputLog += commandResult.Result;
+                            client.Disconnect();
+                            BackBtnVisibility = "Visible";
+                        }
                     }
                     else
                     {
