@@ -18,26 +18,37 @@
     ScrollViewer.CanContentScroll="False"
     mc:Ignorable="d">
 
-    <Grid>
-        <ui:VirtualizingItemsControl
-            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-            ItemsSource="{Binding ViewModel.Colors, Mode=OneWay}"
-            VirtualizingPanel.CacheLengthUnit="Item">
-            <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="{x:Type models:DataColor}">
-                    <ui:Button
-                        Width="80"
-                        Height="80"
-                        Margin="2"
-                        Padding="0"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        Appearance="Secondary"
-                        Background="{Binding Color, Mode=OneWay}"
-                        FontSize="25"
-                        Icon="Fluent24" />
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ui:VirtualizingItemsControl>
+    <Grid VerticalAlignment="Top">
+        <Button 
+            HorizontalAlignment="Stretch" 
+            HorizontalContentAlignment="Left"
+            Height="65"
+            VerticalAlignment="Center">
+            <Grid HorizontalAlignment="Right">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <ui:SymbolIcon
+                    Grid.Column="0"
+                    FontSize="20"
+                    Margin="5,0,0,0"
+                    Symbol="Database32" />
+
+                <Label 
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Margin="15,2,0,0">81.16.61.19</Label>
+
+                <ui:SymbolIcon
+                    Grid.Column="2"
+                    FontSize="20"
+                    Margin="0,0,5,0"
+                    Symbol="Database32"
+                    HorizontalAlignment="Right"/>
+            </Grid>
+        </Button>
     </Grid>
 </Page>

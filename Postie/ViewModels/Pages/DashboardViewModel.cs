@@ -22,7 +22,6 @@ namespace Postie.ViewModels.Pages
     public partial class DashboardViewModel : ObservableObject
     {
         // Roses are red, violets are blue, unexpected '{' on line 32
-        // Roses are red, violets are blue, unexpected '}' on line 42
 
         [ObservableProperty]
         private int _counter = 0;

@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="MySqlConnector" Version="2.3.5" />
     <PackageReference Include="SshNet.Keygen" Version="0.2.0-beta" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
   </ItemGroup>
 
 </Project>

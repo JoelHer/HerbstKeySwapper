@@ -11,21 +11,21 @@ namespace Postie.ViewModels.Windows
     public partial class MainWindowViewModel : ObservableObject
     {
         [ObservableProperty]
-        private string _applicationTitle = "WPF UI - Postie";
+        private string _applicationTitle = "KeySwapper ALPHA 1.0";
 
         [ObservableProperty]
         private ObservableCollection<object> _menuItems = new()
         {
             new NavigationViewItem()
             {
-                Content = "Verbinden",
-                Icon = new SymbolIcon { Symbol = SymbolRegular.Home24 },
+                Content = "Connection Settings",
+                Icon = new SymbolIcon { Symbol = SymbolRegular.DatabasePlugConnected20 },
                 TargetPageType = typeof(Views.Pages.DashboardPage)
             },
             new NavigationViewItem()
             {
-                Content = "Data",
-                Icon = new SymbolIcon { Symbol = SymbolRegular.DataHistogram24 },
+                Content = "Key Exporter",
+                Icon = new SymbolIcon { Symbol = SymbolRegular.CloudArrowDown24 },
                 TargetPageType = typeof(Views.Pages.DataPage)
             }
         };

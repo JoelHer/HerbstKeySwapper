@@ -1,4 +1,6 @@
-﻿using Renci.SshNet;
+﻿using System.Configuration;
+using System.Collections.Specialized;
+using Renci.SshNet;
 using SshNet.Keygen;
 using SshNet.Keygen.Extensions;
 using SshNet.Keygen.SshKeyEncryption;
@@ -10,6 +12,8 @@ using MySqlConnector;
 using System.Data;
 using static AsyncTest.Program;
 using Renci.SshNet.Security;
+using KeySwapper;
+using static KeySwapper.ServerInfoGatherer;
 
 namespace AsyncTest
 {
@@ -20,15 +24,34 @@ namespace AsyncTest
 
         public static async Task Main(string[] args)
         {
-            Program program = new Program(10);
+            ConfigValidator configValidator = new ConfigValidator();
+            configValidator.ValidateConfig();
+
+            var _sC = ConfigurationManager.AppSettings["SimultaneousConnections"];
+            Program program = new Program(int.Parse(_sC));
+
+            Console.Write("Enter Database Password: ");
+
+            ConsoleKeyInfo keyboardKey;
+
+            string passwd = "";
+            do
+            {
+                keyboardKey = Console.ReadKey(true); // true parameter hides the pressed key
+                if (keyboardKey.Key != ConsoleKey.Enter)
+                {
+                    passwd += keyboardKey.KeyChar;
+                }
+            } while (keyboardKey.Key != ConsoleKey.Enter);
+            await Console.Out.WriteLineAsync("\n");
 
 
             var builder = new MySqlConnectionStringBuilder
             {
-                Server = "192.168.178.57",
-                Database = "KeyStore",
-                UserID = "keyswapper",
-                Password = "Herbst710",
+                Server = ConfigurationManager.AppSettings["DatabaseServerAdress"],
+                Database = ConfigurationManager.AppSettings["DatabaseName"],
+                UserID = ConfigurationManager.AppSettings["DatabaseUsername"],
+                Password = passwd,
             };
 
             /*
@@ -49,7 +72,6 @@ namespace AsyncTest
                 +-------------+--------------+------+-----+---------+----------------+
 
              */
-
             
             using (var conn = new MySqlConnection(builder.ConnectionString))
             {
@@ -72,15 +94,15 @@ namespace AsyncTest
                         while (reader.Read())
                         {
                             EndServer _eS = new EndServer();
-                            _eS.ServerID = reader.IsDBNull("ServerID") ? 0 : reader.GetInt32("ServerID");
-                            _eS.Hostname = reader.IsDBNull("Hostname") ? "" : reader.GetString("Hostname");
-                            _eS.Username = reader.IsDBNull("Username") ? "" : reader.GetString("Username");
-                            _eS.PublicKey = reader.IsDBNull("PublicKey") ? "" : reader.GetString("PublicKey");
-                            _eS.PrivateKey = reader.IsDBNull("PrivateKey") ? "" : reader.GetString("PrivateKey");
-                            _eS.Passphrase = reader.IsDBNull("Passphrase") ? "" : reader.GetString("Passphrase");
-                            _eS.Password = reader.IsDBNull("Password") ? "" : reader.GetString("Password");
-                            _eS.JumphostIP = reader.IsDBNull("JumphostIP") ? "" : reader.GetString("JumphostIP");
-                            _eS.LastChanged = reader.IsDBNull("LastChanged") ? 0 : reader.GetInt32("LastChanged");
+                            _eS.ServerID = reader.IsDBNull("ServerID") ? 0 : reader.GetInt32(ConfigurationManager.AppSettings["DatabaseFieldName_ServerID"]);
+                            _eS.Hostname = reader.IsDBNull("Hostname") ? "" : reader.GetString(ConfigurationManager.AppSettings["DatabaseFieldName_Hostname"]);
+                            _eS.Username = reader.IsDBNull("Username") ? "" : reader.GetString(ConfigurationManager.AppSettings["DatabaseFieldName_Username"]);
+                            _eS.PublicKey = reader.IsDBNull("PublicKey") ? "" : reader.GetString(ConfigurationManager.AppSettings["DatabaseFieldName_PublicKey"]);
+                            _eS.PrivateKey = reader.IsDBNull("PrivateKey") ? "" : reader.GetString(ConfigurationManager.AppSettings["DatabaseFieldName_PrivateKey"]);
+                            _eS.Passphrase = reader.IsDBNull("Passphrase") ? "" : reader.GetString(ConfigurationManager.AppSettings["DatabaseFieldName_Passphrase"]);
+                            _eS.Password = reader.IsDBNull("Password") ? "" : reader.GetString(ConfigurationManager.AppSettings["DatabaseFieldName_Password"]);
+                            _eS.JumphostIP = reader.IsDBNull("JumphostIP") ? "" : reader.GetString(ConfigurationManager.AppSettings["DatabaseFieldName_JumphostIP"]);
+                            _eS.LastChanged = reader.IsDBNull("LastChanged") ? 0 : reader.GetInt32(ConfigurationManager.AppSettings["DatabaseFieldName_LastChanged"]);
 
                             _hostnames.Add(_eS);
                         }
@@ -92,13 +114,6 @@ namespace AsyncTest
 
                 Console.WriteLine("Disconnecting from Database...");
             }
-            
-
-            
-            //List<string> hostnames = ["192.168.178.57","100.70.62.51"];
-            //await program.StartWorkAsync(hostnames);
-            //JumpHostTest jumpHostTest = new JumpHostTest();
-            //jumpHostTest.connectWithPK();
         }
 
         public async Task StartWorkAsync(List<EndServer> _hostnames, MySqlConnection _db)
@@ -109,16 +124,17 @@ namespace AsyncTest
             // Access results
             foreach (var result in tasks)
             {
-                Console.WriteLine($"[Worker {result.Result.GetId()}] ({result.Result.GetHost().Hostname}): {result.Result.GetResult()}");
+                Console.WriteLine($"[Worker {result.Result.GetId()}] ({result.Result.GetHost().Hostname}): {result.Result.GetResult()} + {result.Result.GetGatheredData().Hostname}, IPV4DNS:{result.Result.GetGatheredData().Dns4}");
                 if (result.Result.GetResult() == "Keyswap Success")
                 {
                     using (var command = _db.CreateCommand())
                     {
-                        command.CommandText = "UPDATE ServerKeys SET PublicKey = @PublicKey, PrivateKey = @PrivateKey, Passphrase = @Passphrase WHERE ServerID = @ServerID;";
+                        command.CommandText = "UPDATE ServerKeys SET PublicKey = @PublicKey, PrivateKey = @PrivateKey, Passphrase = @Passphrase, LastChanged = @LastChanged WHERE ServerID = @ServerID;";
                         command.Parameters.AddWithValue("@PublicKey", result.Result.GetNewPubKey());
                         command.Parameters.AddWithValue("@PrivateKey", result.Result.GetNewPrivKey());
                         command.Parameters.AddWithValue("@Passphrase", result.Result.GetPassphrase());
                         command.Parameters.AddWithValue("@ServerID", result.Result.GetHost().ServerID);
+                        command.Parameters.AddWithValue("@LastChanged", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 
                         int rowCount = await command.ExecuteNonQueryAsync();
                         if (rowCount < 1) {
@@ -130,9 +146,11 @@ namespace AsyncTest
                     await Console.Out.WriteLineAsync($"Deleting Passphrase for {result.Result.GetHost().Hostname}...");
                     using (var command = _db.CreateCommand())
                     {
-                        command.CommandText = "UPDATE ServerKeys SET Passphrase = @Passphrase, PrivateKey = @Passphrase, PublicKey = @Passphrase WHERE ServerID = @ServerID;";
+                        command.CommandText = "UPDATE ServerKeys SET Passphrase = @Passphrase, PrivateKey = @Passphrase, PublicKey = @Passphrase, LastChanged = @LastChanged WHERE ServerID = @ServerID;";
                         command.Parameters.AddWithValue("@Passphrase", "");
                         command.Parameters.AddWithValue("@ServerID", result.Result.GetHost().ServerID);
+                        command.Parameters.AddWithValue("@LastChanged", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+
 
                         int rowCount = await command.ExecuteNonQueryAsync();
                         if (rowCount < 1) {
@@ -158,19 +176,20 @@ namespace AsyncTest
             ConnectionResult result = await SwapKeyAsync(_server, _server.Hostname, _server.Username);
             gate.Release();
             await Console.Out.WriteLineAsync($"[{_workerID}] {_server.Hostname} Finished");
-            return new ConnectionResult(_server, _workerID, result.GetResult(), result.GetNewPubKey(), result.GetNewPrivKey(), result.GetPassphrase());
+            return new ConnectionResult(_server, _workerID, result.GetResult(), result.GetGatheredData(), result.GetNewPubKey(), result.GetNewPrivKey(), result.GetPassphrase());
         }
 
         public class ConnectionResult
         {
-            private int id;
-            private string result;
-            private string newPubKey;
-            private string newPrivKey;
-            private string passphrase;
-            private EndServer host;
+            public int id;
+            public string result;
+            public string newPubKey;
+            public string newPrivKey;
+            public string passphrase;
+            public EndServer host;
+            public ServerInfo gatheredInfo;
 
-            public ConnectionResult(EndServer host, int id, string result, string newPubKey = "", string newPrivKey = "", string passphrase = "")
+            public ConnectionResult(EndServer host, int id, string result, ServerInfo gatheredInfo, string newPubKey = "", string newPrivKey = "", string passphrase = "")
             {
                 this.host = host;
                 this.id = id;
@@ -178,6 +197,7 @@ namespace AsyncTest
                 this.newPubKey = newPubKey;
                 this.newPrivKey = newPrivKey;
                 this.passphrase = passphrase;
+                this.gatheredInfo = gatheredInfo;
             }
             public int GetId() { return id; }
             public EndServer GetHost() { return host; }
@@ -185,14 +205,18 @@ namespace AsyncTest
             public string GetNewPubKey() {  return newPubKey; }
             public string GetNewPrivKey() {  return newPrivKey; }
             public string GetPassphrase() {  return passphrase; }
+            public ServerInfo GetGatheredData() {  return gatheredInfo; }
         }
 
         public async Task<ConnectionResult> SwapKeyAsync(EndServer _endServer, string _host, string _username)
         {
             if (_username == "")
             {
-                return new ConnectionResult(_endServer, 0, "Data Error: No username provided", "", "");
+                return new ConnectionResult(_endServer, 0, "Data Error: No username provided", new ServerInfo(false,_host, _username), "", "");
             }
+
+            ServerInfoGatherer serverInfoGatherer = new ServerInfoGatherer();
+            ServerInfo serverInfo = serverInfoGatherer.GatherInfo(_endServer).Result;
 
             Random random = new Random();
             StringBuilder builder = new StringBuilder();
@@ -212,9 +236,23 @@ namespace AsyncTest
             string host = _host;
             string username = _username;
 
-            string privateKeyFilePath = Path.Combine("C:\\Users\\itsba\\.ssh\\keystore", $"private_key_{_host.Replace(".", "_")}.txt");
-
-            await File.WriteAllTextAsync(privateKeyFilePath, _key.ToPuttyFormat(keyInfo.Encryption));
+            try
+            {
+                if (bool.Parse(ConfigurationManager.AppSettings["SaveKeyOnSwap"]))
+                {
+                    string privateKeyFilePath = Path.Combine(ConfigurationManager.AppSettings["SaveKeyDirPath"], $"private_key-{_host.Replace(".", "_")}.{(bool.Parse(ConfigurationManager.AppSettings["SaveKeyInPuttyFormat"])? "ppk":"pem")}");
+                    if (bool.Parse(ConfigurationManager.AppSettings["SaveKeyInPuttyFormat"]))
+                    {
+                        await File.WriteAllTextAsync(privateKeyFilePath, _key.ToPuttyFormat(keyInfo.Encryption));
+                    } else
+                    {
+                        await File.WriteAllTextAsync(privateKeyFilePath, _key.ToOpenSshFormat(keyInfo.Encryption));
+                    }
+                }
+            } catch
+            {
+                await Console.Out.WriteLineAsync("Error in config: SaveKeyOnSwap, SaveKeyInPuttyFormat or SaveKeyDirPath unparsable");
+            }
 
             ConnectionInfo ?_connectionInfo = null;
 
@@ -228,7 +266,7 @@ namespace AsyncTest
                         _connectionInfo = new PrivateKeyConnectionInfo(_endServer.Hostname, _endServer.Username, new PrivateKeyFile(new MemoryStream(Encoding.UTF8.GetBytes(_endServer.PrivateKey)), _endServer.Passphrase));
                     } catch
                     {
-                        return new ConnectionResult(_endServer, 0, "Data error: Error with Private Key", "", "");
+                        return new ConnectionResult(_endServer, 0, "Data error: Error with Private Key", serverInfo, "", "");
                     }
                 } else
                 {
@@ -239,7 +277,7 @@ namespace AsyncTest
                     }
                     catch
                     {
-                        return new ConnectionResult(_endServer, 0, "Data error: Error with Private Key", "", "");
+                        return new ConnectionResult(_endServer, 0, "Data error: Error with Private Key", serverInfo, "", "");
                     }
                 }
             } else
@@ -279,7 +317,7 @@ namespace AsyncTest
                                         command = pclient.RunCommand("cat ~/.ssh/authorized_keys");
 
                                         bool _foundkey = false;
-                                        List<Key> keys = ParseAuthorizedKeys(@publicSshKeyWithComment);
+                                        List<Key> keys = ParseAuthorizedKeys(command.Result);
 
                                         foreach (Key key in keys)
                                         {
@@ -303,7 +341,7 @@ namespace AsyncTest
                                                         command = kclient.RunCommand("cat ~/.ssh/authorized_keys");
 
                                                         _foundkey = false;
-                                                        keys = ParseAuthorizedKeys(@publicSshKeyWithComment);
+                                                        keys = ParseAuthorizedKeys(command.Result);
 
                                                         foreach (Key key in keys)
                                                         {
@@ -314,27 +352,27 @@ namespace AsyncTest
                                                         }
                                                         if (_foundkey)
                                                         {
-                                                            return new ConnectionResult(_endServer, 0, "Keyswap Success", publicSshKeyWithComment, _key.ToOpenSshFormat(keyInfo.Encryption), _GeneratedPassphrase);
+                                                            return new ConnectionResult(_endServer, 0, "Keyswap Success", serverInfo, publicSshKeyWithComment, _key.ToOpenSshFormat(keyInfo.Encryption), _GeneratedPassphrase);
                                                         } else
                                                         {
-                                                            return new ConnectionResult(_endServer, 0, "KeySwap2 error: not found after copy", "", "");
+                                                            return new ConnectionResult(_endServer, 0, "KeySwap2 error: not found after copy", serverInfo, "", "");
                                                             throw new Exception("KeySwap2 error: not found after copy");
                                                         }
                                                     } else
                                                     {
-                                                        return new ConnectionResult(_endServer, 0, "Keytest2 Failed to connect.", "", "");
+                                                        return new ConnectionResult(_endServer, 0, "Keytest2 Failed to connect.", serverInfo, "", "");
                                                         throw new Exception("Keytest2 Failed: to connect.");
                                                     }
                                                     } catch (Exception e)
                                                 {
-                                                    return new ConnectionResult(_endServer, 0, $"Keytest2 Failed.Error: { e.Message }", "", "");
+                                                    return new ConnectionResult(_endServer, 0, $"Keytest2 Failed.Error: { e.Message }", serverInfo, "", "");
                                                     throw new Exception($"Keytest2 Failed. Error: {e.Message}");
                                                 } 
                                             }
                                         }
                                         else
                                         {
-                                            return new ConnectionResult(_endServer, 0, "KeySwap error: not found after copy", "", "");
+                                            return new ConnectionResult(_endServer, 0, "KeySwap error: not found after copy", serverInfo, "", "");
                                             throw new Exception("KeySwap error: not found after copy");
                                         }
 
@@ -342,13 +380,13 @@ namespace AsyncTest
                                     }
                                     else
                                     {
-                                        return new ConnectionResult(_endServer, 0, "Keytest Failed to connect.", "", "");
+                                        return new ConnectionResult(_endServer, 0, "Keytest Failed to connect.", serverInfo, "", "");
                                         throw new Exception("Keytest Failed: to connect.");
                                     }
                                 }
                                 catch (Exception ex)
                                 {
-                                    return new ConnectionResult(_endServer, 0, $"Keytest Failed. Error: {ex.Message}", "", "");
+                                    return new ConnectionResult(_endServer, 0, $"Keytest Failed. Error: {ex.Message}", serverInfo, "", "");
                                     throw new Exception($"Keytest Failed. Error: {ex.Message}");
                                 }
                             }
@@ -356,14 +394,14 @@ namespace AsyncTest
                     }
                     else
                     {
-                        return new ConnectionResult(_endServer, 0, "Failed to connect to SSH server.", "", "");
+                        return new ConnectionResult(_endServer, 0, "Failed to connect to SSH server.", serverInfo, "", "");
                         throw new Exception("Failed to connect to SSH server.");
 
                     }
                 }
                 catch (Exception ex)
                 {
-                    return new ConnectionResult(_endServer, 0, $"Error 1: {ex.Message}", "", "");
+                    return new ConnectionResult(_endServer, 0, $"Error 1: {ex.Message}", serverInfo, "", "");
                 }
             }
         }
