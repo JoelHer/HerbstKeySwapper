@@ -326,9 +326,9 @@ namespace AsyncTest
                                         command = pclient.RunCommand("cat ~/.ssh/authorized_keys");
 
                                         bool _foundkey = false;
-                                        List<Key> keys = ParseAuthorizedKeys(command.Result);
+                                        List<KeySwapper.Key> keys = ParseAuthorizedKeys(command.Result);
 
-                                        foreach (Key key in keys)
+                                        foreach (KeySwapper.Key key in keys)
                                         {
                                             if (key.KeyValue == ParseAuthorizedKeys(@publicSshKeyWithComment)[0].KeyValue)
                                             {
@@ -352,7 +352,7 @@ namespace AsyncTest
                                                         _foundkey = false;
                                                         keys = ParseAuthorizedKeys(command.Result);
 
-                                                        foreach (Key key in keys)
+                                                        foreach (KeySwapper.Key key in keys)
                                                         {
                                                             if (key.KeyValue == ParseAuthorizedKeys(@publicSshKeyWithComment)[0].KeyValue)
                                                             {
@@ -415,9 +415,9 @@ namespace AsyncTest
             }
         }
 
-        static List<Key> ParseAuthorizedKeys(string authorizedKeysString)
+        static List<KeySwapper.Key> ParseAuthorizedKeys(string authorizedKeysString)
         {
-            List<Key> keys = new List<Key>();
+            List<KeySwapper.Key> keys = new List<KeySwapper.Key>();
 
             string[] lines = authorizedKeysString.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -430,39 +430,11 @@ namespace AsyncTest
                     string key = parts[1];
                     string comment = parts.Length > 2 ? string.Join(" ", parts.Skip(2)) : "";
 
-                    keys.Add(new Key(type, key, comment));
+                    keys.Add(new KeySwapper.Key(type, key, comment));
                 }
             }
 
             return keys;
-        }
-
-        public class EndServer
-        {
-            public int ServerID { get; set; }
-            public string Hostname { get; set; }
-            public string? Username { get; set; }
-            public string? PublicKey { get; set; }
-            public string? PrivateKey { get; set; }
-            public string? Password { get; set; }
-            public string? Passphrase { get; set; }
-            public string? JumphostIP { get; set; }
-            public int? LastChanged { get; set; }
-
-        }
-
-        class Key
-        {
-            public string Type { get; }
-            public string KeyValue { get; }
-            public string Comment { get; }
-
-            public Key(string type, string keyValue, string comment)
-            {
-                Type = type;
-                KeyValue = keyValue;
-                Comment = comment;
-            }
         }
 
         public Program(int _sC)
