@@ -29,7 +29,10 @@ namespace AsyncTest
                 { "SimultaneousConnections", typeof(int) },
                 { "SaveKeyOnSwap", typeof(bool) },
                 { "SaveKeyDirPath", typeof(string) },
-                { "SaveKeyInPuttyFormat", typeof(bool) }
+                { "DatabaseTableName_Keys", typeof(string) },
+                { "DatabaseTableName_Data", typeof(string) },
+                { "DatabaseFieldName_DataServerID", typeof(string) },
+                { "DatabaseFieldName_DataDNS4", typeof(string) }
             };
 
             bool unsetValue = false;

@@ -37,7 +37,7 @@ namespace AsyncTest
             string passwd = "";
             do
             {
-                keyboardKey = Console.ReadKey(true); // true parameter hides the pressed key
+                keyboardKey = Console.ReadKey(true);
                 if (keyboardKey.Key != ConsoleKey.Enter)
                 {
                     passwd += keyboardKey.KeyChar;
@@ -53,25 +53,6 @@ namespace AsyncTest
                 UserID = ConfigurationManager.AppSettings["DatabaseUsername"],
                 Password = passwd,
             };
-
-            /*
-                Database structure:   
-            
-                +-------------+--------------+------+-----+---------+----------------+
-                | Field       | Type         | Null | Key | Default | Extra          |
-                +-------------+--------------+------+-----+---------+----------------+
-                | ServerID    | int(11)      | NO   | PRI | NULL    | auto_increment |
-                | Hostname    | varchar(255) | NO   |     | NULL    |                |
-                | Username    | varchar(255) | YES  |     | NULL    |                |
-                | PublicKey   | mediumtext   | YES  |     | NULL    |                |
-                | PrivateKey  | mediumtext   | YES  |     | NULL    |                |
-                | Password    | varchar(255) | YES  |     | NULL    |                |
-                | Passphrase  | varchar(255) | YES  |     | NULL    |                |
-                | JumphostIP  | varchar(255) | YES  |     | NULL    |                |
-                | LastChanged | int(11)      | YES  |     | NULL    |                |
-                +-------------+--------------+------+-----+---------+----------------+
-
-             */
             
             using (var conn = new MySqlConnection(builder.ConnectionString))
             {
@@ -121,7 +102,6 @@ namespace AsyncTest
             List<Task<ConnectionResult>> tasks = [.. CreateWork(_hostnames)];
             await Task.WhenAll(tasks);
 
-            // Access results
             foreach (var result in tasks)
             {
                 Console.WriteLine($"[Worker {result.Result.GetId()}] ({result.Result.GetHost().Hostname}): {result.Result.GetResult()} + {result.Result.GetGatheredData().Hostname}, IPV4DNS:{result.Result.GetGatheredData().Dns4}");
@@ -129,7 +109,7 @@ namespace AsyncTest
                 {
                     using (var command = _db.CreateCommand())
                     {
-                        command.CommandText = "UPDATE ServerKeys SET PublicKey = @PublicKey, PrivateKey = @PrivateKey, Passphrase = @Passphrase, LastChanged = @LastChanged WHERE ServerID = @ServerID;";
+                        command.CommandText = "UPDATE "+ ConfigurationManager.AppSettings["DatabaseTableName_Keys"] + " SET "+ ConfigurationManager.AppSettings["DatabaseFieldName_PublicKey"] + " = @PublicKey, "+ ConfigurationManager.AppSettings["DatabaseFieldName_PrivateKey"] + " = @PrivateKey, "+ ConfigurationManager.AppSettings["DatabaseFieldName_Passphrase"] + " = @Passphrase, "+ ConfigurationManager.AppSettings["DatabaseFieldName_LastChanged"] + " = @LastChanged WHERE "+ ConfigurationManager.AppSettings["DatabaseFieldName_ServerID"] + " = @ServerID;";
                         command.Parameters.AddWithValue("@PublicKey", result.Result.GetNewPubKey());
                         command.Parameters.AddWithValue("@PrivateKey", result.Result.GetNewPrivKey());
                         command.Parameters.AddWithValue("@Passphrase", result.Result.GetPassphrase());
@@ -146,7 +126,7 @@ namespace AsyncTest
                     await Console.Out.WriteLineAsync($"Deleting Passphrase for {result.Result.GetHost().Hostname}...");
                     using (var command = _db.CreateCommand())
                     {
-                        command.CommandText = "UPDATE ServerKeys SET Passphrase = @Passphrase, PrivateKey = @Passphrase, PublicKey = @Passphrase, LastChanged = @LastChanged WHERE ServerID = @ServerID;";
+                        command.CommandText = "UPDATE "+ ConfigurationManager.AppSettings["DatabaseTableName_Keys"] + " SET "+ ConfigurationManager.AppSettings["DatabaseFieldName_Passphrase"] + " = @Passphrase, "+ ConfigurationManager.AppSettings["DatabaseFieldName_PrivateKey"] + " = @Passphrase, "+ ConfigurationManager.AppSettings["DatabaseFieldName_PublicKey"] + " = @Passphrase, "+ ConfigurationManager.AppSettings["DatabaseFieldName_LastChanged"] + " = @LastChanged WHERE "+ ConfigurationManager.AppSettings["DatabaseFieldName_ServerID"] + " = @ServerID;";
                         command.Parameters.AddWithValue("@Passphrase", "");
                         command.Parameters.AddWithValue("@ServerID", result.Result.GetHost().ServerID);
                         command.Parameters.AddWithValue("@LastChanged", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
@@ -156,6 +136,27 @@ namespace AsyncTest
                         if (rowCount < 1) {
                             Console.WriteLine($"Error updating in Database: {rowCount} records updated");
                         }
+                    }
+                }
+                if (result.Result.GetGatheredData().success)
+                {
+                    try
+                    {
+                        using (var ccommand = _db.CreateCommand())
+                        {
+                            ccommand.CommandText = "UPDATE "+ ConfigurationManager.AppSettings["DatabaseTableName_Data"] + " SET "+ ConfigurationManager.AppSettings["DatabaseFieldName_DataDNS4"] + " = @DNS4 WHERE "+ ConfigurationManager.AppSettings["DatabaseFieldName_DataServerID"] + " = @ServerID";
+                            ccommand.Parameters.AddWithValue("@DNS4", result.Result.GetGatheredData().Dns4);
+                            ccommand.Parameters.AddWithValue("@ServerID", result.Result.GetId());
+
+                            var rowCount = await ccommand.ExecuteNonQueryAsync();
+                            if (rowCount < 1)
+                            {
+                                Console.WriteLine($"Error: {ConfigurationManager.AppSettings["DatabaseTableName_Data"]} 0 rows updated. Does ServerID in table Exist?.");
+                            }
+                        }
+                    } catch (Exception _ex)
+                    {
+                        await Console.Out.WriteLineAsync($"Error updating gathered data: {_ex}");
                     }
                 }
             }
