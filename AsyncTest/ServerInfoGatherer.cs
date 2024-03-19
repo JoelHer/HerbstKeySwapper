@@ -29,8 +29,6 @@ namespace KeySwapper
         public async Task<ServerInfo> GatherInfo(EndServer server)
         {
             ConnectionInfo? _connectionInfo = null;
-
-            
             if (server.PrivateKey != "")
             {
                 if (server.Passphrase != "")
@@ -88,13 +86,43 @@ namespace KeySwapper
                     var _hostname = client.RunCommand("hostname");
                     var _dns4 = client.RunCommand("cat /etc/resolv.conf");
                     
-                    return new ServerInfo(true, server.Hostname, _hostname.Result.Replace("\n", ""), remHash(_dns4.Result));
+                    return new ServerInfo(true, server.Hostname, _hostname.Result.Replace("\n", "").Replace("\r", ""), remHash(_dns4.Result).Replace("\n", "").Replace("\r", ""));
                 } else
                 {
                     return new ServerInfo(false, server.Hostname);
                 }
             }
             
+        }
+
+        public async Task<ServerInfo> GatherInfo(EndServer server, SshClient client)
+        {
+            string remHash(string input)
+            {
+                StringBuilder output = new StringBuilder();
+                string[] lines = input.Split('\n');
+                foreach (string line in lines)
+                {
+                    if (!line.Trim().StartsWith("#"))
+                    {
+                        output.AppendLine(line);
+                    }
+                }
+                return output.ToString().Replace("\n", "");
+            }
+
+            if (client.IsConnected)
+            {
+                var _hostname = client.RunCommand("hostname");
+                var _dns4 = client.RunCommand("cat /etc/resolv.conf");
+
+                return new ServerInfo(true, server.Hostname, _hostname.Result.Replace("\n", "").Replace("\r", ""), remHash(_dns4.Result).Replace("\n", "").Replace("\r", ""));
+            }
+            else
+            {
+                return new ServerInfo(false, server.Hostname);
+            }
+
         }
     }
 }

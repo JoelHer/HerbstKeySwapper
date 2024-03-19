@@ -215,9 +215,6 @@ namespace AsyncTest
                 return new ConnectionResult(_endServer, 0, "Data Error: No username provided", new ServerInfo(false,_host, _username), "", "");
             }
 
-            ServerInfoGatherer serverInfoGatherer = new ServerInfoGatherer();
-            ServerInfo serverInfo = serverInfoGatherer.GatherInfo(_endServer).Result;
-
             Random random = new Random();
             StringBuilder builder = new StringBuilder();
 
@@ -266,7 +263,7 @@ namespace AsyncTest
                         _connectionInfo = new PrivateKeyConnectionInfo(_endServer.Hostname, _endServer.Username, new PrivateKeyFile(new MemoryStream(Encoding.UTF8.GetBytes(_endServer.PrivateKey)), _endServer.Passphrase));
                     } catch
                     {
-                        return new ConnectionResult(_endServer, 0, "Data error: Error with Private Key", serverInfo, "", "");
+                        return new ConnectionResult(_endServer, 0, "Data error: Error with Private Key", new ServerInfo(false, _host, _username), "", "");
                     }
                 } else
                 {
@@ -277,7 +274,7 @@ namespace AsyncTest
                     }
                     catch
                     {
-                        return new ConnectionResult(_endServer, 0, "Data error: Error with Private Key", serverInfo, "", "");
+                        return new ConnectionResult(_endServer, 0, "Data error: Error with Private Key", new ServerInfo(false, _host, _username), "", "");
                     }
                 }
             } else
@@ -295,6 +292,18 @@ namespace AsyncTest
 
                     if (client.IsConnected)
                     {
+                        ServerInfoGatherer serverInfoGatherer = new ServerInfoGatherer();
+                        ServerInfo serverInfo;
+                        try
+                        {
+                            serverInfo = serverInfoGatherer.GatherInfo(_endServer, client).Result;
+                        }
+                        catch (Exception _ex)
+                        {
+                            await Console.Out.WriteLineAsync($"Error in gathering server info: {_ex}");
+                            serverInfo = new ServerInfo(false, _host, _username);
+                        }
+
                         var command = client.RunCommand("cat ~/.ssh/authorized_keys");
                         command = client.RunCommand("echo \"" + _key.ToPublic() + "\" >> ~/.ssh/authorized_keys");
 
@@ -394,14 +403,14 @@ namespace AsyncTest
                     }
                     else
                     {
-                        return new ConnectionResult(_endServer, 0, "Failed to connect to SSH server.", serverInfo, "", "");
+                        return new ConnectionResult(_endServer, 0, "Failed to connect to SSH server.", new ServerInfo(false, _host, _username), "", "");
                         throw new Exception("Failed to connect to SSH server.");
 
                     }
                 }
                 catch (Exception ex)
                 {
-                    return new ConnectionResult(_endServer, 0, $"Error 1: {ex.Message}", serverInfo, "", "");
+                    return new ConnectionResult(_endServer, 0, $"Error 1: {ex.Message}", new ServerInfo(false, _host, _username), "", "");
                 }
             }
         }
