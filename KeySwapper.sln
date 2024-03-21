@@ -3,11 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34526.213
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Postie", "Postie\Postie.csproj", "{4C0931E3-71B1-4DB6-A96E-BA92A9E928D0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KeySwapperUI", "Postie\KeySwapperUI.csproj", "{4C0931E3-71B1-4DB6-A96E-BA92A9E928D0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KeySwapper", "AsyncTest\KeySwapper.csproj", "{230CF8D0-A72A-4836-9F02-E249669563FE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyswapperService", "KeyswapperService\KeyswapperService.csproj", "{01AFDAA2-3BEB-4DC2-8A03-A8678F7DC22B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +21,6 @@ Global
 		{230CF8D0-A72A-4836-9F02-E249669563FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{230CF8D0-A72A-4836-9F02-E249669563FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{230CF8D0-A72A-4836-9F02-E249669563FE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{01AFDAA2-3BEB-4DC2-8A03-A8678F7DC22B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{01AFDAA2-3BEB-4DC2-8A03-A8678F7DC22B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{01AFDAA2-3BEB-4DC2-8A03-A8678F7DC22B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{01AFDAA2-3BEB-4DC2-8A03-A8678F7DC22B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
