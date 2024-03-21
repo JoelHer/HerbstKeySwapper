@@ -14,7 +14,6 @@ using System.Windows.Input;
 using Microsoft.Extensions.Hosting;
 using Postie.Models;
 using Postie.Services;
-using PostieKeyCreator;
 using Renci.SshNet;
 
 namespace Postie.ViewModels.Pages
